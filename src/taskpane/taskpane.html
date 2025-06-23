@@ -1,0 +1,113 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
+<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contoso Task Pane Add-in</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
+    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+
+    <!-- Template styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+    <!-- 在<head>标签内添加 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="ms-welcome__header" style="background-color: transparent; display: flex; justify-content: center; align-items: center; padding-top: 10px; flex-direction: column;">
+        <img src="../../assets/logo.png" alt="应用图标" style="height: 50px; max-width: 100%;">
+    </header>
+
+    <main id="app-body" class="ms-welcome__main pb-4 flex flex-col" style="height: calc(100vh - 60px); --input-height: 80px">
+        <div class="w-full pt-1 pb-4 px-4 rounded-lg bg-white flex flex-col flex-1">
+            <div class="relative">
+
+                <div class="border border-gray-300 rounded-lg relative h-auto min-h-[50px] max-h-[110px] w-full shadow-md overflow-hidden">
+                    <div class="relative pt-2 pb-[18px]">  <!-- 添加底部padding -->
+                        <textarea id="input-text" 
+                            class="w-full min-h-[20px] max-h-[80px] px-3 py-1 text-gray-700 text-sm resize-none focus:outline-none focus:ring-0 focus:border-transparent [&::-webkit-scrollbar]:hidden" 
+                            placeholder="请输入内容..."
+                            ></textarea>
+                    </div>
+                    <div class="absolute right-0 top-0 flex items-center h-full pr-2">
+                        <button id="send-btn" class="!rounded-button text-gray-500 hover:text-primary pt-2 flex items-center justify-center whitespace-nowrap transition absolute right-3 bottom-1">
+                            <i class="fas fa-paper-plane text-[18px]"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full flex gap-1 pt-2 ">
+                    <div class="w-full dropdown-container relative flex-1">
+                        <button id="translate-btn" class="w-full !rounded-button bg-gray-50 hover:bg-gray-100 hover:text-primary text-gray-700 px-3 py-1.5 flex items-center justify-center whitespace-nowrap text-sm ">
+                            <i class="fas fa-language mr-1"></i>
+                            翻译
+                            <i class="fas fa-chevron-down ml-1"></i>
+                        </button>
+                        <div id="language-options" class="dropdown bg-white shadow-lg rounded-lg text-sm">
+                            <button class="option-item" data-value="zh">中文</button>
+                            <button class="option-item" data-value="en">英文</button>
+                            <button class="option-item" data-value="de">德文</button>
+                        </div>
+                    </div>
+                    <div class="w-full dropdown-container relative flex-1">
+                        <button id="optimize-btn" class="w-full !rounded-button bg-gray-50 hover:bg-gray-100 hover:text-primary text-gray-700 px-3 py-1.5 flex items-center justify-center whitespace-nowrap text-sm">
+                            <i class="fas fa-magic mr-1"></i>
+                            优化
+                            <i class="fas fa-chevron-down ml-1"></i>
+                        </button>
+                        <div id="optimize-options" class="dropdown bg-white shadow-lg rounded-lg py-2 w-full text-sm">
+                            <button class="option-item" data-value="扩写">扩写</button>
+                            <button class="option-item" data-value="缩减">缩减</button>
+                            <button class="option-item" data-value="润色">润色</button>
+                        </div>
+                    </div>
+                    <button id="explain-btn" class="w-full flex-1 !rounded-button bg-gray-50 hover:bg-gray-100 hover:text-primary text-gray-700 px-3 py-1.5 flex items-center justify-center whitespace-nowrap text-sm">
+                        <i class="fas fa-book mr-1"></i>
+                        解释
+                    </button>
+                </div>
+            </div>
+            <!-- 修改结果区域 -->
+            <div id="result-area" class="relative">
+
+                <div id="result" class="mt-4 px-3 pb-4 bg-white rounded-lg min-h-[100px] relative text-sm text-gray-700 overflow-y-auto" 
+                     style="height: calc(min(100vh - var(--input-height) - 190px, 300px));">
+                    <!-- 结果内容将在这里显示 -->
+                </div>
+                <!-- 加载动画放在result div内部 -->
+                <div id="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 hidden">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div id="task-description" class="text-sm text-gray-500 mt-2"></div>
+                </div>
+                <!-- 修改操作按钮组 -->
+                <div class="absolute right-0 -bottom-8 flex gap-2">  <!-- 从-bottom-4改为-bottom-6 -->
+                    <button id="insert-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hidden">
+                        <i class="fas fa-file-import mr-1"></i>插入
+                    </button>
+                    <button id="copy-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hidden">
+                        <i class="fas fa-copy mr-1"></i>复制
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="script.js"></script>
+    </main>
+</body>
+
+</html>
